@@ -12,9 +12,9 @@ public class CustomerLeaderboardService : ICustomerLeaderboardService
     public decimal UpdateScore(ulong customerId, decimal scoreChange)
     {
         if (scoreChange == 0) throw new ArgumentException("scoreChange cannot be zero.");
+        _lock.EnterWriteLock();
         try
         {
-            _lock.EnterWriteLock();
             var exist = _customers.TryGetValue(customerId, out Customer? customer);
             customer ??= new Customer
             {
@@ -49,9 +49,9 @@ public class CustomerLeaderboardService : ICustomerLeaderboardService
         if (end >= start || start <= _leaderboard.Count)
         {
             if (end > _leaderboard.Count) end = _leaderboard.Count;
+            _lock.EnterReadLock();
             try
             {
-                _lock.EnterReadLock();
                 var customers = _leaderboard.GetByRange(start, end);
                 var list = new List<CustomerDto>(customers.Count);
                 foreach (var (rank, item) in customers)
@@ -75,9 +75,9 @@ public class CustomerLeaderboardService : ICustomerLeaderboardService
 
     public IEnumerable<CustomerDto> GetCustomersById(ulong customerId, int high = 0, int low = 0)
     {
+        _lock.EnterReadLock();
         try
         {
-            _lock.EnterReadLock();
             if (_customers.TryGetValue(customerId, out var customer))
             {
                 var customers = _leaderboard.GetNeighbors(customer, high, low);

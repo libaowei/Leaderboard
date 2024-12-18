@@ -9,7 +9,7 @@ public partial class SkipList<T>
     ///     unsigned long span;
     /// } zskiplistLevel;
     /// </summary>
-    private class SkipListLevel
+    private sealed class SkipListLevel
     {
         public SkipListNode Forward { get; set; }
 
