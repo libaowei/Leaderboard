@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using Leaderboard.Core.Common;
 
 namespace Leaderboard.Core.DataStructures;
 
@@ -36,7 +35,7 @@ namespace Leaderboard.Core.DataStructures;
 /// </para>
 /// </summary>
 [DebuggerDisplay("Header = {_header}, Tail = {_tail}, Level = {_level}, Count = {Count}")]
-public partial class SkipList<T> : IEnumerable<T> where T : IComparable<T>
+public partial class SkipList<T> : IEnumerable<T>
 {
     public int Count { get; private set; }
     /// <summary>
@@ -48,14 +47,20 @@ public partial class SkipList<T> : IEnumerable<T> where T : IComparable<T>
     private SkipListNode _header;
     // The skip-list last node
     private SkipListNode _tail;
+    private IComparer<T> _comparer = default!;
 
     private const int MaxLevel = 32;
 
-    public SkipList()
+    public SkipList() : this(Comparer<T>.Default)
+    {
+    }
+
+    public SkipList(IComparer<T> comparer)
     {
         Count = 0;
         _level = 1;
         _header = new SkipListNode(default, MaxLevel);
+        _comparer = comparer ?? Comparer<T>.Default;
     }
 
     /// <summary>
@@ -63,7 +68,7 @@ public partial class SkipList<T> : IEnumerable<T> where T : IComparable<T>
     /// exist (up to the caller to enforce that). The skiplist takes ownership
     /// of the passed 'ele'.
     /// </summary>
-    public void Insert(T item)
+    public bool Insert(T item)
     {
         var update = new SkipListNode[MaxLevel];
         Span<int> rank = stackalloc int[MaxLevel];
@@ -73,13 +78,19 @@ public partial class SkipList<T> : IEnumerable<T> where T : IComparable<T>
         {
             /* store rank that is crossed to reach the insert position */
             rank[i] = i == _level - 1 ? 0 : rank[i + 1];
-            while (node.Level[i].Forward?.Value.IsLessThan(item) == true)
+            while (IsLessThan(node.Level[i].Forward, item))
             {
                 rank[i] += node.Level[i].Span;
                 node = node.Level[i].Forward;
             }
 
             update[i] = node;
+        }
+
+        // return if node exists
+        if (IsEqualsTo(node.Level[0].Forward, item))
+        {
+            return false;
         }
 
         /* we assume the element is not already inside, since we allow duplicated
@@ -125,6 +136,7 @@ public partial class SkipList<T> : IEnumerable<T> where T : IComparable<T>
             _tail = node;
 
         Count++;
+        return true;
 
         /// <summary>
         /// Returns a random level for the new skiplist node we are going to create.
@@ -154,7 +166,7 @@ public partial class SkipList<T> : IEnumerable<T> where T : IComparable<T>
         {
             /* store rank that is crossed to reach the insert position */
             rank[i] = i == _level - 1 ? 0 : rank[i + 1];
-            while (node.Level[i].Forward?.Value.IsLessThan(item) == true)
+            while (IsLessThan(node.Level[i].Forward, item))
             {
                 rank[i] += node.Level[i].Span;
                 node = node.Level[i].Forward;
@@ -227,7 +239,7 @@ public partial class SkipList<T> : IEnumerable<T> where T : IComparable<T>
         // Mark all nodes as update.
         for (var i = _level - 1; i >= 0; i--)
         {
-            while (node.Level[i].Forward?.Value.IsLessThan(item) == true)
+            while (IsLessThan(node.Level[i].Forward, item))
                 node = node.Level[i].Forward;
 
             update[i] = node;
@@ -236,7 +248,7 @@ public partial class SkipList<T> : IEnumerable<T> where T : IComparable<T>
         node = node.Level[0].Forward;
 
         // Return default value of T if the item was not found
-        if (node?.Value.Equals(item) != true)
+        if (!IsEqualsTo(node, item))
         {
             return false;
         }
@@ -279,18 +291,18 @@ public partial class SkipList<T> : IEnumerable<T> where T : IComparable<T>
         for (var i = _level - 1; i >= 0; --i)
         {
             flag = false;
-            while (node.Level[i].Forward?.Value.IsLessThanOrEqualTo(item) == true)
+            while (IsLessThanOrEqualTo(node.Level[i].Forward, item))
             {
                 node = node.Level[i].Forward;
                 flag = true;
             }
-            if (flag && node.Value != null && node.Value.Equals(item))
+            if (flag && IsEqualsTo(node, item))
             {
                 return true;
             }
         }
         // Return true if we found the element; false otherwise
-        return node.Value != null && node.Value.Equals(item);
+        return IsEqualsTo(node, item);
     }
 
     /// <summary>
@@ -310,14 +322,14 @@ public partial class SkipList<T> : IEnumerable<T> where T : IComparable<T>
         for (var i = _level - 1; i >= 0; i--)
         {
             flag = false;
-            while (node.Level[i].Forward?.Value.IsLessThanOrEqualTo(item) == true)
+            while (IsLessThanOrEqualTo(node.Level[i].Forward, item))
             {
                 rank += node.Level[i].Span;
                 node = node.Level[i].Forward;
                 flag = true;
             }
             /* current might be equal to _header, so test if obj is non-NULL */
-            if (flag && node.Value != null && node.Value.Equals(item))
+            if (flag && IsEqualsTo(node, item))
             {
                 return rank;
             }
@@ -423,14 +435,14 @@ public partial class SkipList<T> : IEnumerable<T> where T : IComparable<T>
         for (var i = _level - 1; i >= 0; --i)
         {
             flag = false;
-            while (node.Level[i].Forward?.Value.IsLessThanOrEqualTo(item) == true)
+            while (IsEqualsTo(node.Level[i].Forward, item))
             {
                 rank += node.Level[i].Span;
                 node = node.Level[i].Forward;
                 flag = true;
             }
 
-            if (flag && node.Value != null && node.Value.Equals(item))
+            if (flag && IsEqualsTo(node, item))
             {
                 var pre = node;
                 while (pre.Backward != null && high > 0)
@@ -480,6 +492,23 @@ public partial class SkipList<T> : IEnumerable<T> where T : IComparable<T>
         return GetEnumerator();
     }
     #endregion IEnumerable<T> Implementation
+
+    #region Compare
+    private bool IsLessThan(SkipListNode node, T value)
+    {
+        return node != null && _comparer.Compare(node.Value, value) < 0;
+    }
+
+    private bool IsEqualsTo(SkipListNode node, T value)
+    {
+        return node != null && _comparer.Compare(node.Value, value) == 0;
+    }
+
+    private bool IsLessThanOrEqualTo(SkipListNode node, T value)
+    {
+        return node != null && _comparer.Compare(node.Value, value) <= 0;
+    }
+    #endregion
 
     public void Clear()
     {

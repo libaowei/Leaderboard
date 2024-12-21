@@ -30,7 +30,7 @@ public partial class SkipList<T>
     /// </para>
     /// </summary>
     [DebuggerDisplay("{Value}[{Level.Length}]")]
-    private sealed class SkipListNode : IComparable<SkipListNode>
+    private sealed class SkipListNode
     {
         public SkipListNode(T value, int level)
         {
@@ -47,13 +47,5 @@ public partial class SkipList<T>
         public T Value { get; init; }
         public SkipListNode Backward { get; set; }
         public SkipListLevel[] Level { get; init; }
-
-        public int CompareTo(SkipListNode other)
-        {
-            if (other == null)
-                return -1;
-
-            return Value.CompareTo(other.Value);
-        }
     }
 }
