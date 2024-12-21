@@ -46,9 +46,9 @@ public class CustomerLeaderboardService : ICustomerLeaderboardService
 
     public IEnumerable<CustomerDto> GetCustomersByRank(int start, int end)
     {
-        if (end >= start || start <= _leaderboard.Count)
+        if (end > _leaderboard.Count) end = _leaderboard.Count;
+        if (start <= end)
         {
-            if (end > _leaderboard.Count) end = _leaderboard.Count;
             _lock.EnterReadLock();
             try
             {

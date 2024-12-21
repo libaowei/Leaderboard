@@ -1,4 +1,6 @@
-﻿namespace Leaderboard.Core.DataStructures;
+﻿using System.Diagnostics;
+
+namespace Leaderboard.Core.DataStructures;
 
 public partial class SkipList<T>
 {
@@ -9,6 +11,7 @@ public partial class SkipList<T>
     ///     unsigned long span;
     /// } zskiplistLevel;
     /// </summary>
+    [DebuggerDisplay("--{Span}-->{Forward}")]
     private sealed class SkipListLevel
     {
         public SkipListNode Forward { get; set; }

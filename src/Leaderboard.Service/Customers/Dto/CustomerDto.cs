@@ -1,5 +1,8 @@
-﻿namespace Leaderboard.Service.Customers.Dto;
+﻿using System.Diagnostics;
 
+namespace Leaderboard.Service.Customers.Dto;
+
+[DebuggerDisplay("{CustomerId},{Score}")]
 public class Customer : IComparable<Customer>
 {
     public ulong CustomerId { get; set; }

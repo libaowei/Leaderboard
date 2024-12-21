@@ -1,4 +1,5 @@
-﻿using Leaderboard.Core.Common;
+﻿using System.Diagnostics;
+using Leaderboard.Core.Common;
 
 namespace Leaderboard.Core.DataStructures;
 
@@ -34,6 +35,7 @@ namespace Leaderboard.Core.DataStructures;
 /// }
 /// </para>
 /// </summary>
+[DebuggerDisplay("Header = {_header}, Tail = {_tail}, Level = {_level}, Count = {Count}")]
 public partial class SkipList<T> : IEnumerable<T> where T : IComparable<T>
 {
     public int Count { get; private set; }

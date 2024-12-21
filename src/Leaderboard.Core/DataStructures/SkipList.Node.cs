@@ -1,4 +1,6 @@
-﻿namespace Leaderboard.Core.DataStructures;
+﻿using System.Diagnostics;
+
+namespace Leaderboard.Core.DataStructures;
 
 public partial class SkipList<T>
 {
@@ -27,6 +29,7 @@ public partial class SkipList<T>
     /// }
     /// </para>
     /// </summary>
+    [DebuggerDisplay("{Value}[{Level.Length}]")]
     private sealed class SkipListNode : IComparable<SkipListNode>
     {
         public SkipListNode(T value, int level)
